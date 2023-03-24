@@ -1,0 +1,36 @@
+name: CI
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 22 * * *"
+  push:
+    branches:
+      - master
+
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone src
+        uses: actions/checkout@main
+      - name: Clone upstream
+        uses: actions/checkout@main
+        with:
+          repository: f/awesome-chatgpt-prompts
+          path: upstream
+
+      - name: Convert csv to json
+        run: |
+          python3 convert.py
+
+      - name: Push changes
+        run: |
+          git config user.name "zydou"
+          git config user.email "git@zydou.me"
+          git add prompts.json
+          git commit -m "chore: update prompts.json on $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M') [skip ci]" || export NO_UPDATES=true
+          if [ "$NO_UPDATES" != "true" ] ; then
+              git push origin master
+          fi
